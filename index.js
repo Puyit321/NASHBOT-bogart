@@ -107,28 +107,23 @@ app.post("/login", (req, res) => {
       }
 
       const cuid = api.getCurrentUserID();
+      api.getUserInfo(cuid, (err, userInfo) => {
+        if (err) {
+          console.error("Failed to get user info:", err);
+          return;
+        }
 
-      if (!global.NashBoT.onlineUsers.has(cuid)) {
-        api.getUserInfo(cuid, (err, userInfo) => {
-          if (err) {
-            console.error("Failed to get user info:", err);
-            return res.status(500).send("Failed to get user info.");
-          }
-
-          const realName = userInfo[cuid].name;
-          global.NashBoT.onlineUsers.set(cuid, {
-            userID: cuid,
-            realName: realName,
-            sessionStart: new Date(),
-            prefix: prefix,
-          });
-
-          setupBot(api, prefix);
-          res.sendStatus(200);
+        const realName = userInfo[cuid].name;
+        global.NashBoT.onlineUsers.set(cuid, {
+          userID: cuid,
+          realName: realName,
+          sessionStart: new Date(),
+          prefix: prefix,
         });
-      } else {
-        return res.status(400).send("User is already logged in.");
-      }
+
+        setupBot(api, prefix);
+        res.sendStatus(200);
+      });
     });
   } catch (error) {
     res.status(400).send("Invalid appState");
