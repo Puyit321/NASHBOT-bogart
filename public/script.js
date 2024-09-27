@@ -27,45 +27,42 @@ document.addEventListener('DOMContentLoaded', () => {
           guideButton.textContent = 'Show Guide';
         }
       });
-      
-      async function checkIfLoggedIn() {
-  const response = await fetch("/active-sessions");
-  const sessions = await response.json();
-  return Object.keys(sessions).length > 0;
-}
 
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
+    form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const botState = document.getElementById("botState").value;
+    const prefix = document.getElementById("prefix").value;
+    const adminUID = document.getElementById("adminUID").value;
 
-  const alreadyLoggedIn = await checkIfLoggedIn();
-  if (alreadyLoggedIn) {
-    alert("You are already logged in. Please logout before trying to log in again.");
-    return;
-  }
+    const loggedIn = document.cookie.split(';').some(cookie => cookie.trim().startsWith('loggedIn='));
 
-  const botState = document.getElementById("botState").value;
-  const prefix = document.getElementById("prefix").value;
-  const adminUID = document.getElementById("adminUID").value;
-
-  try {
-    const response = await fetch("/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ botState, prefix, adminUID }),
-    });
-
-    if (response.ok) {
-      alert("Logged in successfully!");
-      document.getElementById("botState").value = "";
-      document.getElementById("prefix").value = "";
-      document.getElementById("adminUID").value = "";
-    } else {
-      alert("Failed to login.");
+    if (loggedIn) {
+      alert("You are already logged in. Please logout before logging in again.");
+      return;
     }
-  } catch (error) {
-    console.error("Error:", error);
-  }
-});
+
+    try {
+      const response = await fetch("/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ botState, prefix, adminUID }),
+      });
+
+      if (response.ok) {
+        document.cookie = "loggedIn=true; path=/; max-age=3600";
+        alert("Logged in successfully!");
+        document.getElementById("botState").value = "";
+        document.getElementById("prefix").value = "";
+        document.getElementById("adminUID").value = "";
+      } else {
+        document.cookie = "loggedIn=; path=/; max-age=0";
+        alert("Failed to login.");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      document.cookie = "loggedIn=; path=/; max-age=0";
+    }
+  });
       
       async function fetchCommands() {
         try {

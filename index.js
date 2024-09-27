@@ -93,7 +93,7 @@ async function autoLogin() {
 
 app.post("/login", (req, res) => {
   const { botState, prefix, adminUID } = req.body;
-  
+
   try {
     const appState = JSON.parse(botState);
     fs.writeFileSync(path.join(__dirname, "appstate.json"), JSON.stringify(appState));
@@ -107,14 +107,14 @@ app.post("/login", (req, res) => {
       }
 
       const cuid = api.getCurrentUserID();
-      
+
       if (!global.NashBoT.onlineUsers.has(cuid)) {
         api.getUserInfo(cuid, (err, userInfo) => {
           if (err) {
             console.error("Failed to get user info:", err);
-            return;
+            return res.status(500).send("Failed to get user info.");
           }
-          
+
           const realName = userInfo[cuid].name;
           global.NashBoT.onlineUsers.set(cuid, {
             userID: cuid,
@@ -122,7 +122,7 @@ app.post("/login", (req, res) => {
             sessionStart: new Date(),
             prefix: prefix,
           });
-          
+
           setupBot(api, prefix);
           res.sendStatus(200);
         });
