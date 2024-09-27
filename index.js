@@ -17,6 +17,8 @@ global.NashBoT = {
   onlineUsers: new Map(),
 };
 
+global.adminUID = "";
+
 global.NashBot = {
   ENDPOINT: "https://nash-rest-api-production.up.railway.app/",
   END: "https://deku-rest-api.gleeze.com/",
@@ -81,12 +83,14 @@ async function autoLogin() {
 }
 
 app.post("/login", (req, res) => {
-  const { botState, prefix } = req.body;
-
+  const { botState, prefix, adminUID } = req.body;
+  
   try {
     const appState = JSON.parse(botState);
     fs.writeFileSync(path.join(__dirname, "appstate.json"), JSON.stringify(appState));
-    
+
+    global.adminUID = adminUID;
+
     const proxy = getRandomProxy();
     login({ appState, proxy }, (err, api) => {
       if (err) {
@@ -94,10 +98,24 @@ app.post("/login", (req, res) => {
       }
 
       const cuid = api.getCurrentUserID();
-      global.NashBoT.onlineUsers.set(cuid, { userID: cuid, prefix });
-
-      setupBot(api, prefix);
-      res.sendStatus(200);
+      
+      api.getUserInfo(cuid, (err, userInfo) => {
+        if (err) {
+          console.error("Failed to get user info:", err);
+          return;
+        }
+        
+        const realName = userInfo[cuid].name;
+        global.NashBoT.onlineUsers.set(cuid, {
+          userID: cuid,
+          realName: realName,
+          sessionStart: new Date(),
+          prefix: prefix,
+        });
+        
+        setupBot(api, prefix);
+        res.sendStatus(200);
+      });
     });
   } catch (error) {
     res.status(400).send("Invalid appState");
@@ -155,10 +173,17 @@ async function handleMessage(api, event, prefix) {
   const cmdFile = global.NashBoT.commands.get(command.toLowerCase());
   if (cmdFile) {
     const nashPrefix = cmdFile.nashPrefix !== false;
+    const isAdminCommand = cmdFile.role === "admin";  // Command's role check
+    const isAdmin = event.senderID === global.adminUID;  // Check if user is admin
+
+    if (isAdminCommand && !isAdmin) {
+      return api.sendMessage("This command is restricted to admin only.", event.threadID);
+    }
+
     if (nashPrefix && !event.body.toLowerCase().startsWith(prefix)) {
       return;
     }
-    
+
     try {
       cmdFile.execute(api, event, args, prefix);
     } catch (error) {
@@ -180,6 +205,7 @@ app.get("/commands", (req, res) => {
   global.NashBoT.commands.forEach((command, name) => {
     commands[name] = {
       description: command.description || "No description available",
+      role: command.role || "user",
       nashPrefix: command.nashPrefix,
     };
   });

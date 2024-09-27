@@ -5,6 +5,7 @@ module.exports = {
     description: 'Interact with GPT-3.5 Turbo',
     cooldown: 3,
     nashPrefix: false,
+    role: 'user',
     execute: async (api, event, args) => {
         const input = args.join(' ');
         const uid = event.senderID;
