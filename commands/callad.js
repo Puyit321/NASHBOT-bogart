@@ -4,14 +4,13 @@ module.exports = {
   nashPrefix: false,
   execute(api, event) {
     const { body, senderID, threadID, messageID } = event;
+    const adminID = global.adminUID;
 
     if (!body.trim()) {
       const usageMessage = "Usage: /callad <your message>\nPlease include a message to send to the admin.";
       api.sendMessage(usageMessage, threadID, messageID);
       return;
     }
-
-    const ownerID = "100088690249020";
 
     api.getUserInfo(senderID, (err, userInfo) => {
       if (err || !userInfo[senderID]) {
@@ -20,9 +19,10 @@ module.exports = {
       }
 
       const userName = userInfo[senderID].name;
-      const messageToOwner = `👤 User: ${userName}\n\n📩 Message: ${body}`;
+      const messageContent = body.replace(/^callad\s+/i, ""); // Tinatanggal ang "callad" sa mensahe
+      const messageToOwner = `👤 User: ${userName}\n\n📩 Message: ${messageContent}`;
 
-      api.sendMessage(messageToOwner, ownerID, (err) => {
+      api.sendMessage(messageToOwner, adminID, (err) => {
         if (err) {
           api.sendMessage("Failed to send your message to the admin.", threadID, messageID);
           return;

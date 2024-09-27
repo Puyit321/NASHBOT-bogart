@@ -59,7 +59,15 @@ async function init() {
 
 function getRandomProxy() {
   const proxies = fs.readFileSync(path.join(__dirname, "proxy.txt"), "utf8").split("\n");
-  return proxies[Math.floor(Math.random() * proxies.length)].trim();
+  const randomProxy = proxies[Math.floor(Math.random() * proxies.length)].trim();
+  updateProxies(); // Update proxies after use
+  return randomProxy;
+}
+
+function updateProxies() {
+  const proxies = fs.readFileSync(path.join(__dirname, "proxy.txt"), "utf8").split("\n");
+  const updatedProxies = [...new Set(proxies)]; // Remove duplicates
+  fs.writeFileSync(path.join(__dirname, "proxy.txt"), updatedProxies.join("\n"));
 }
 
 async function autoLogin() {
@@ -75,9 +83,10 @@ async function autoLogin() {
       }
 
       const cuid = api.getCurrentUserID();
-      global.NashBoT.onlineUsers.set(cuid, { userID: cuid, prefix: "!" });
-
-      setupBot(api, "!");
+      if (!global.NashBoT.onlineUsers.has(cuid)) {
+        global.NashBoT.onlineUsers.set(cuid, { userID: cuid, prefix: "!" });
+        setupBot(api, "!");
+      }
     });
   }
 }
@@ -99,23 +108,27 @@ app.post("/login", (req, res) => {
 
       const cuid = api.getCurrentUserID();
       
-      api.getUserInfo(cuid, (err, userInfo) => {
-        if (err) {
-          console.error("Failed to get user info:", err);
-          return;
-        }
-        
-        const realName = userInfo[cuid].name;
-        global.NashBoT.onlineUsers.set(cuid, {
-          userID: cuid,
-          realName: realName,
-          sessionStart: new Date(),
-          prefix: prefix,
+      if (!global.NashBoT.onlineUsers.has(cuid)) {
+        api.getUserInfo(cuid, (err, userInfo) => {
+          if (err) {
+            console.error("Failed to get user info:", err);
+            return;
+          }
+          
+          const realName = userInfo[cuid].name;
+          global.NashBoT.onlineUsers.set(cuid, {
+            userID: cuid,
+            realName: realName,
+            sessionStart: new Date(),
+            prefix: prefix,
+          });
+          
+          setupBot(api, prefix);
+          res.sendStatus(200);
         });
-        
-        setupBot(api, prefix);
-        res.sendStatus(200);
-      });
+      } else {
+        return res.status(400).send("User is already logged in.");
+      }
     });
   } catch (error) {
     res.status(400).send("Invalid appState");
@@ -173,11 +186,11 @@ async function handleMessage(api, event, prefix) {
   const cmdFile = global.NashBoT.commands.get(command.toLowerCase());
   if (cmdFile) {
     const nashPrefix = cmdFile.nashPrefix !== false;
-    const isAdminCommand = cmdFile.role === "admin";  // Command's role check
-    const isAdmin = event.senderID === global.adminUID;  // Check if user is admin
+    const isAdminCommand = cmdFile.role === "admin";
+    const isAdmin = event.senderID === global.adminUID;
 
     if (isAdminCommand && !isAdmin) {
-      return api.sendMessage("This command is restricted to admin only.", event.threadID);
+      return api.sendMessage("You do not have permission to use this command.", event.threadID);
     }
 
     if (nashPrefix && !event.body.toLowerCase().startsWith(prefix)) {
@@ -194,8 +207,8 @@ async function handleMessage(api, event, prefix) {
 
 app.get("/active-sessions", async (req, res) => {
   const json = {};
-  global.NashBoT.onlineUsers.forEach(({ userID, prefix }, uid) => {
-    json[uid] = { userID, prefix };
+  global.NashBoT.onlineUsers.forEach(({ userID, prefix, realName }, uid) => {
+    json[uid] = { userID, realName, prefix };
   });
   res.json(json);
 });
