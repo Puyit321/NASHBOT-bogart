@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
           document.getElementById("botState").value = "";
           document.getElementById("prefix").value = "";
           document.getElementById("adminUID").value = "";
-          startCooldown(15);  // Start cooldown for 15 seconds
+          startCooldown(15);
         } else {
           document.cookie = "loggedIn=; path=/; max-age=0";
           alert("Failed to login.");

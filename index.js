@@ -60,13 +60,13 @@ async function init() {
 function getRandomProxy() {
   const proxies = fs.readFileSync(path.join(__dirname, "proxy.txt"), "utf8").split("\n");
   const randomProxy = proxies[Math.floor(Math.random() * proxies.length)].trim();
-  updateProxies(); // Update proxies after use
+  updateProxies();
   return randomProxy;
 }
 
 function updateProxies() {
   const proxies = fs.readFileSync(path.join(__dirname, "proxy.txt"), "utf8").split("\n");
-  const updatedProxies = [...new Set(proxies)]; // Remove duplicates
+  const updatedProxies = [...new Set(proxies)];
   fs.writeFileSync(path.join(__dirname, "proxy.txt"), updatedProxies.join("\n"));
 }
 
