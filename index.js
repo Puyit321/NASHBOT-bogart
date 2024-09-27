@@ -21,7 +21,7 @@ global.NashBot = {
   ENDPOINT: "https://nash-rest-api-production.up.railway.app/",
   END: "https://deku-rest-api.gleeze.com/",
   KEN: "https://api.kenliejugarap.com/",
-  MONEY: "https://frizzyelectricclients-production.up.railway.app/"
+  MONEY: "https://frizzyelectricclients-production.up.railway.app/",
 };
 
 async function loadCommands() {
@@ -55,11 +55,18 @@ async function init() {
   await autoLogin();
 }
 
+function getRandomProxy() {
+  const proxies = fs.readFileSync(path.join(__dirname, "proxy.txt"), "utf8").split("\n");
+  return proxies[Math.floor(Math.random() * proxies.length)].trim();
+}
+
 async function autoLogin() {
   const appStatePath = path.join(__dirname, "appstate.json");
   if (fs.existsSync(appStatePath)) {
     const appState = JSON.parse(fs.readFileSync(appStatePath, "utf8"));
-    login({ appState }, (err, api) => {
+    const proxy = getRandomProxy();
+    
+    login({ appState, proxy }, (err, api) => {
       if (err) {
         console.error("Failed to login automatically:", err);
         return;
@@ -80,7 +87,8 @@ app.post("/login", (req, res) => {
     const appState = JSON.parse(botState);
     fs.writeFileSync(path.join(__dirname, "appstate.json"), JSON.stringify(appState));
     
-    login({ appState }, (err, api) => {
+    const proxy = getRandomProxy();
+    login({ appState, proxy }, (err, api) => {
       if (err) {
         return res.status(500).send("Failed to login");
       }
