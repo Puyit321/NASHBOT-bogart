@@ -17,7 +17,15 @@ global.NashBoT = {
   onlineUsers: new Map(),
 };
 
-global.adminUID = "";
+const configPath = path.join(__dirname, "config.json");
+let config = { adminUID: "", prefix: "!" };
+
+if (fs.existsSync(configPath)) {
+  config = JSON.parse(fs.readFileSync(configPath, "utf8"));
+}
+
+global.adminUID = config.adminUID;
+global.prefix = config.prefix;
 
 global.NashBot = {
   ENDPOINT: "https://nash-rest-api-production.up.railway.app/",
@@ -84,8 +92,8 @@ async function autoLogin() {
 
       const cuid = api.getCurrentUserID();
       if (!global.NashBoT.onlineUsers.has(cuid)) {
-        global.NashBoT.onlineUsers.set(cuid, { userID: cuid, prefix: "!" });
-        setupBot(api, "!");
+        global.NashBoT.onlineUsers.set(cuid, { userID: cuid, prefix: config.prefix });
+        setupBot(api, config.prefix);
       }
     });
   }
@@ -99,6 +107,9 @@ app.post("/login", (req, res) => {
     fs.writeFileSync(path.join(__dirname, "appstate.json"), JSON.stringify(appState));
 
     global.adminUID = adminUID;
+    config.adminUID = adminUID;
+    config.prefix = prefix;
+    fs.writeFileSync(configPath, JSON.stringify(config));
 
     const proxy = getRandomProxy();
     login({ appState, proxy }, (err, api) => {
