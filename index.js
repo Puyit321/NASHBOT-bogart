@@ -83,7 +83,7 @@ async function autoLogin() {
   if (fs.existsSync(appStatePath)) {
     const appState = JSON.parse(fs.readFileSync(appStatePath, "utf8"));
     const proxy = getRandomProxy();
-    
+
     login({ appState, proxy }, (err, api) => {
       if (err) {
         console.error("Failed to login automatically:", err);
@@ -121,19 +121,24 @@ app.post("/login", (req, res) => {
       api.getUserInfo(cuid, (err, userInfo) => {
         if (err) {
           console.error("Failed to get user info:", err);
-          return;
+          return res.status(500).send("Failed to get user info");
         }
+        
+        if (userInfo[cuid]) {
+          const realName = userInfo[cuid].name;
+          global.NashBoT.onlineUsers.set(cuid, {
+            userID: cuid,
+            realName: realName,
+            sessionStart: new Date(),
+            prefix: prefix,
+          });
 
-        const realName = userInfo[cuid].name;
-        global.NashBoT.onlineUsers.set(cuid, {
-          userID: cuid,
-          realName: realName,
-          sessionStart: new Date(),
-          prefix: prefix,
-        });
-
-        setupBot(api, prefix);
-        res.sendStatus(200);
+          setupBot(api, prefix);
+          res.sendStatus(200);
+        } else {
+          console.error("User info not found for userID:", cuid);
+          res.status(500).send("User info not found");
+        }
       });
     });
   } catch (error) {
