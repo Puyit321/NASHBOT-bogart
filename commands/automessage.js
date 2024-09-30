@@ -5,7 +5,7 @@ module.exports = {
     description: "Automatically sends a motivational quote every hour.",
     nashPrefix: false,
     version: "1.0.0",
-    role: 0,
+    role: "admin",
     cooldowns: 5,
     async execute(api, event) {
         const { threadID } = event;
