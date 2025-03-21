@@ -28,7 +28,7 @@ global.adminUID = config.adminUID;
 global.prefix = config.prefix;
 
 global.NashBot = {
-  ENDPOINT: "https://nash-rest-api-production.up.railway.app/",
+  ENDPOINT: "https://ccprojectsapis.zetsu.xyz/api/",
   END: "https://deku-rest-api.gleeze.com/",
   KEN: "https://api.kenliejugarap.com/",
   MONEY: "https://frizzyelectricclients-production.up.railway.app/",
