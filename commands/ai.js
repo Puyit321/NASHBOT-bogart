@@ -18,7 +18,7 @@ module.exports = {
 
         try {
             const response = await axios.get(`${global.NashBot.END}gpt3?ask=${encodeURIComponent(input)}`);
-            const result = response.data.result.reply;
+            const result = response.data.data;
 
             if (!result) {
                 throw new Error('No valid response received from the API.');
